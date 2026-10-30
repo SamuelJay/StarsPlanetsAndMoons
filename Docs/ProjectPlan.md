@@ -1,6 +1,6 @@
 # Project Plan
 
-Status: planning only. Nothing described here beyond repository setup is implemented.
+Status: M0 and M1a are complete (see *Current status*). Everything else described here is planned, not implemented.
 
 ## Vision
 
@@ -127,10 +127,40 @@ These milestones are a direction, not a commitment to complete every feature.
 - Zooming between planetary and surface scales (e.g. asteroid impacts).
 - Connections to separate physics, animal and evolution projects.
 
-## Current status (M0)
+## Current status
+
+### M0 — Repository foundation (done)
 
 - Unity project exists (Unity 6000.6.7f1, URP).
 - NotoriousPIG Framework v0.3.0 declared in `Packages/manifest.json`, resolved and compiling.
-- Framework bootstrap profile **not yet created** — see the README and `ArchitectureNotes.md`.
+- Framework bootstrap profile **intentionally not created**: nothing in M1a needs a framework service, so the framework logs `No BootstrapProfile found.` on play (harmless).
+
+### M1a — Functional prototype of Home → Earth → Night → Home (done)
+
+Entry scene: `Assets/Scenes/HomeEarthNight.unity`.
+
+Implemented:
+
+- One authoritative simulation state (`SolarSimulation`): simulated hours, Earth rotation (24 h per revolution, eastward), a fixed Sun direction, a home latitude/longitude (52°N, 0°E) and the derived illumination of that location. No tilt, orbit, seasons or Moon.
+- Local view: placeholder house, road, cars, hedges, lamp, trees, neighbouring houses and cloud puffs. Sun, ambient light, fog and night lights (windows, lamp, porch) are derived from the simulation, not toggled.
+- Planetary view: textured Earth sphere with a cloud shell, a home marker pinned to the surface, a Sun body and parallel sunbeams showing the Sun direction, and lit/dark hemispheres.
+- One continuous zoom journey (mouse wheel, keys or buttons): house → rising above the neighbourhood → cloud layer → Earth from space, fully reversible. The local/planetary representation swap happens at the middle of a cloud white-out.
+- Time controls: pause, forward and reverse at several rates (simulated hours per real second).
+- 12 EditMode tests covering the Earth/Sun model.
+
+Verified in the Unity 6000.6.7f1 Editor (play mode, driven through the Unity MCP; the wheel and keys were exercised with queued Input System events): compilation, scene load with no missing references, Earth rotation and marker pinned to the surface, local and planetary illumination agreeing to ~1e-6, home going day → night → day when time is advanced and reversed, travel not changing simulated time, and a round trip returning to the identical camera pose and daylight state.
+
+Known issues and limitations to carry into M1b:
+
+- The local/planetary handoff is a white-out swap, not a visually continuous blend: below the cloud layer the ground is a flat disc, above it a textured sphere with no matching terrain. A proper cloud layer or atmosphere would hide this better.
+- The space camera is fixed in the inertial (Sun-fixed) frame, so the home marker rotates out of sight behind Earth late at night (hidden when checked at 22:30 local solar time). A follow-home or orbit control would fix this.
+- No touch, controller or drag-to-rotate input. The Input System bindings live in `Assets/Input/Journey.inputactions`, so these can be added without changing the code that consumes them.
+- Placeholder art only: no stars, moon, atmosphere glow or post-processing. The dark hemisphere is only faintly visible against black space.
+- Not tested on a mobile device; performance is untested outside the Editor.
+- Not hand-played with a real mouse and keyboard in a focused Editor; see the README for manual steps.
+
+### Next milestone
+
+M1b (refinement of M1a, before M2): improve the handoff and atmosphere, add a follow-home/orbit camera in space, add touch and controller input, improve the readability of the dark side, and do a first playtest of whether the day/night idea is understood.
 
 See also: [ArchitectureNotes.md](ArchitectureNotes.md).
