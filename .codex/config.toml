@@ -1,0 +1,6 @@
+# Project-scoped Codex config (applies when this project is trusted in Codex).
+# Server version must match the com.coplaydev.unity-mcp tag in the Unity manifest.
+[mcp_servers.unityMCP]
+command = "uvx"
+args = ["--from", "mcpforunityserver==10.3.0", "mcp-for-unity", "--transport", "stdio"]
+startup_timeout_sec = 60

@@ -40,6 +40,19 @@ The framework requires a project-owned profile at
 it the framework only logs a warning and registers no services. It will be added when the
 first milestone determines which services are needed.
 
+## AI tooling: MCP for Unity (optional)
+
+[MCP for Unity](https://github.com/CoplayDev/unity-mcp) **v10.3.0** (free, MIT) lets Claude Code and Codex
+drive the open Unity Editor. The Unity package is pinned in `Packages/manifest.json`; the matching
+server version (`mcpforunityserver==10.3.0`) is pinned in the repo-scoped client configs:
+
+- Claude Code: `.mcp.json` (approve the project server when prompted)
+- Codex: `.codex/config.toml` (project must be trusted in Codex)
+
+Both launch the server with `uvx`, so [`uv`](https://docs.astral.sh/uv/) must be on `PATH`. The Unity
+Editor must have this project open, with the package resolved, for tools to connect
+(check *Window > MCP for Unity*). Keep the package tag and server version in step when upgrading.
+
 ## Documentation
 
 - [Project plan and roadmap](Docs/ProjectPlan.md)
