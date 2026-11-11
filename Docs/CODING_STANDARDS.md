@@ -15,8 +15,9 @@
 3. **Solve the underlying problem.** A small patch is not sound if it hides an invalid state, duplicates logic, bypasses ownership, or creates predictable follow-up work.
 4. **Keep changes focused.** No speculative abstractions, unrelated refactors, wholesale rewrites, or cosmetic cleanup outside the requested scope. Prefer parameterising a suitable existing system to building a replacement.
 5. **Build reusable systems where the reuse is real.** Prefer clear, independently usable components with narrow contracts. Do not make ordinary project-specific behaviour generic merely to appear extensible.
-6. **Do not fight the engine.** Prefer the engine's or platform's intended mechanisms over brittle workarounds.
-7. **Make correctness observable.** Test the affected behaviour and its realistic regression surface. Distinguish compile-time checks, automated tests, runtime observations, and unverified assumptions. Never weaken tests just to make them pass.
+6. **Make meaningful variation data-driven.** Keep reusable behaviour in code and put authorable values, content, tuning, and selection of existing capabilities in data. Do not fork behaviour simply to vary its configuration.
+7. **Do not fight the engine.** Prefer the engine's or platform's intended mechanisms over brittle workarounds.
+8. **Make correctness observable.** Test the affected behaviour and its realistic regression surface. Distinguish compile-time checks, automated tests, runtime observations, and unverified assumptions. Never weaken tests just to make them pass.
 
 ## 2. Architecture and design
 
@@ -36,7 +37,20 @@
 - Do not extract coincidentally similar code if its semantics, ownership, or likely evolution differ. Avoid trivial helper proliferation and premature abstraction.
 - Follow SOLID and object-oriented design principles as practical reasoning tools, not as a mandate to create extra interfaces and layers.
 
-### 2.3 Focus and complexity
+### 2.3 Data-driven design — fundamental architectural principle
+
+**Behaviour is implemented in code; meaningful design values, authored content, and variations of that behaviour are defined by data.** A system should normally support new instances and tuning of existing capabilities without requiring source-code changes.
+
+- **Externalise meaningful values.** Put gameplay tuning, balance, thresholds, durations, ranges, probabilities, costs, limits, content references, feature settings, and other values that designers or maintainers might reasonably vary into appropriate configuration or authored data. Do not bury them as literals or constants in implementation logic merely to avoid a "magic number" warning.
+- **One implementation, many configurations.** Characters, enemies, weapons, abilities, encounters, UI elements, and similar entities should share systems where their *behavioural machinery* is the same. Express differences through data (e.g. Unity ScriptableObjects, prefabs/serialized configuration, tables, or the project's established data mechanism), rather than cloned scripts, per-entity subclasses, or repeated special cases.
+- **Prefer capabilities over identities.** Systems should react to configured capabilities, categories, policies, and state—not hardcoded character names, type-name checks, asset identifiers, or one-off `if`/`switch` branches selecting behaviour for specific content. When a genuinely different algorithm is needed, implement it as a cohesive, reusable strategy/component and select or configure it through data where appropriate.
+- **Separate definition from runtime state.** Authored data defines what an instance *can do* and its starting or tunable parameters. Runtime state records what that instance *is doing now*. Avoid mutating shared configuration assets to track per-instance state.
+- **Provide deliberate authoring and validation.** Data belongs where the project expects it to be edited, with useful defaults, clear ownership, sensible bounds, and validation of missing or incompatible references. Do not silently fall back to hardcoded values in a way that conceals bad configuration.
+- **Do not replace code with a giant configuration framework.** Structural literals (`0`, `1`, indexing), mathematical identities, protocol constants, and stable implementation invariants do not need editable fields merely because they are numbers. Nor should genuinely different behaviour be forced into an opaque, overly generic data schema. Externalise **meaningful variation**, not every literal or line of logic.
+
+**Practical test:** If a new character, weapon, enemy type, level, or configuration uses behaviour the system already supports, can it be authored through data *without modifying its implementation*? If not, investigate whether data ownership or the abstraction is wrong before adding a special case.
+
+### 2.4 Focus and complexity
 
 - Prefer clear, cohesive methods; **approximately 25 lines is a review signal, not a hard limit**. Extract meaningful subordinate responsibilities rather than creating many one-line wrappers to satisfy a count.
 - Reduce unnecessary nesting using guard clauses and early returns when they improve clarity.
@@ -73,7 +87,7 @@ These are deliberate house conventions, even when they differ from default Micro
 - **Prefer `[SerializeField] private`** for Inspector-authored fields; public mutable fields require a specific reason.
 - For externally readable state, prefer a controlled property such as `{ get; private set; }` where appropriate. A serialized auto-property can use `[field: SerializeField]` if that is the project's established authoring pattern.
 - Expose operations and stable contracts rather than mutable internals or long chains such as `character.characterCombat.comboRunner.DoSomething()`.
-- **No magic numbers or magic strings in program logic.** Name meaningful constants, configuration values, gameplay tunables, identifiers, state keys, and lookups. Use ScriptableObjects or other project data/configuration mechanisms where suitable. Ordinary structural literals (`0`, `1`) do not need ceremonial constants.
+- **No hardcoded meaningful design values or content-specific decisions in program logic.** Tunable values and supported content variations belong in appropriate authored data, not merely in named `const` declarations. Constants remain appropriate for true invariants. Avoid magic strings for identifiers, states, and lookups; prefer strong references, enums, or established data keys.
 - Player-facing dialogue, narrative text, UI labels, and informative log messages are not “magic strings.” Authored game content should live in data where practical rather than being dispersed through gameplay logic.
 - Follow the **repository's existing** dependency-acquisition and lifecycle rules. Unity sibling references may be cached once during initialization; cross-system references should use the project's established service/injection pattern. Do not introduce `FindObjectOfType` runtime searches or arbitrary `.Instance` chains as shortcuts.
 - Treat Unity component lifecycle, object destruction/fake-null semantics, serialization, and editor/runtime boundaries deliberately. Balance subscription and teardown, and keep editor-only dependencies out of player builds.
@@ -132,7 +146,7 @@ A standards review is an **evidence-based code review**, not a refactor mandate 
 - By default review the **current diff and its necessary integration seams** against the standards. For a whole-repository audit, the request must explicitly say so.
 - Read relevant repository instructions and project architecture first, then inspect real code. Do not assume documents describe current implementation perfectly.
 - Identify which files are first-party and which rules apply. Do not report local/project exceptions as violations.
-- Look for semantic issues **as well as** formatting: duplicated ownership, misplaced responsibilities, bypassed framework mechanisms, unjustified inheritance, hidden invalid state, magic values, comments, missing verification, and regression risk.
+- Look for semantic issues **as well as** formatting: duplicated ownership, misplaced responsibilities, bypassed framework mechanisms, unjustified inheritance, **hardcoded meaningful values or per-content branches that should be data-driven**, hidden invalid state, comments, missing verification, and regression risk.
 - Distinguish objectively verifiable violations from design judgments. Give the smallest useful remedy; do not recommend speculative rewrites.
 
 ### Finding severity
@@ -168,8 +182,8 @@ CLAUDE.md, and task-relevant project architecture/testing docs). Inspect
 current code rather than relying on docs as proof of implementation.
 
 Scope: [current diff by default / specified paths / explicitly whole repo].
-Review first-party code against applicable standards, including real design
-and ownership issues, not just naming and formatting. Preserve established
+Review first-party code against applicable standards, including whether
+meaningful variation is data-driven, not just naming and formatting. Preserve established
 project-specific conventions and do not demand unrelated refactors.
 
 For each actionable finding, give file:line, severity, precise violated rule,
